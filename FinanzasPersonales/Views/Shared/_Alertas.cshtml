@@ -1,0 +1,18 @@
+@{
+    var alertas = new (string Clave, string Clase, string Icono)[]
+    {
+        ("Ok", "success", "check-circle"),
+        ("Warning", "warning", "exclamation-triangle"),
+        ("Error", "danger", "x-circle")
+    };
+}
+@foreach (var (clave, clase, icono) in alertas)
+{
+    if (TempData[clave] is string mensaje)
+    {
+        <div class="alert alert-@clase alert-dismissible fade show no-print" role="alert">
+            <i class="bi bi-@icono"></i> @mensaje
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+}

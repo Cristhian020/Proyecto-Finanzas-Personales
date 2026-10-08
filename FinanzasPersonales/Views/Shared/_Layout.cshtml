@@ -1,0 +1,113 @@
+@using FinanzasPersonales.Services
+@{
+    var controlador = ViewContext.RouteData.Values["controller"]?.ToString();
+    var accion = ViewContext.RouteData.Values["action"]?.ToString();
+    string Activo(string c, string? a = null) =>
+        controlador == c && (a is null || accion == a) ? "active" : "";
+    var esAdmin = User.EsAdmin();
+    var nombre = User.Identity?.Name ?? "";
+    var iniciales = string.Concat(nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Finanzas Personales</title>
+    <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Menú principal">
+            <div class="offcanvas-body">
+                <a class="brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark"><i class="bi bi-wallet2"></i></span> Finanzas
+                </a>
+
+                <nav class="d-flex flex-column gap-1">
+                    <a class="side-link @Activo("Home")" asp-controller="Home" asp-action="Index"><i class="bi bi-grid"></i> Inicio</a>
+                    <a class="side-link @Activo("Transacciones")" asp-controller="Transacciones" asp-action="Index"><i class="bi bi-arrow-left-right"></i> Transacciones</a>
+                    <a class="side-link @Activo("Consulta")" asp-controller="Consulta" asp-action="Index"><i class="bi bi-funnel"></i> Consulta</a>
+
+                    <div class="nav-label">Corte mensual</div>
+                    <a class="side-link @Activo("Cortes", "Procesar")" asp-controller="Cortes" asp-action="Procesar"><i class="bi bi-calculator"></i> Procesar corte</a>
+                    <a class="side-link @(Activo("Cortes", "Index") + Activo("Cortes", "Detalle"))" asp-controller="Cortes" asp-action="Index"><i class="bi bi-calendar2-check"></i> Cortes realizados</a>
+                    <a class="side-link @Activo("Cortes", "Reporte")" asp-controller="Cortes" asp-action="Reporte"><i class="bi bi-file-earmark-text"></i> Reporte de cortes</a>
+
+                    @if (esAdmin)
+                    {
+                        <div class="nav-label">Administración</div>
+                        <a class="side-link @Activo("Usuarios")" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people"></i> Usuarios</a>
+                        <a class="side-link @Activo("Egresos")" asp-controller="Egresos" asp-action="Index"><i class="bi bi-bag"></i> Egresos</a>
+                        <a class="side-link @Activo("Ingresos")" asp-controller="Ingresos" asp-action="Index"><i class="bi bi-cash-stack"></i> Ingresos</a>
+
+                        <div class="nav-label">Catálogos</div>
+                        <a class="side-link @Activo("TiposEgreso")" asp-controller="TiposEgreso" asp-action="Index"><i class="bi bi-tags"></i> Tipos de egreso</a>
+                        <a class="side-link @Activo("TiposIngreso")" asp-controller="TiposIngreso" asp-action="Index"><i class="bi bi-tag"></i> Tipos de ingreso</a>
+                        <a class="side-link @Activo("RenglonesEgreso")" asp-controller="RenglonesEgreso" asp-action="Index"><i class="bi bi-diagram-3"></i> Renglones de egreso</a>
+                        <a class="side-link @Activo("TiposPago")" asp-controller="TiposPago" asp-action="Index"><i class="bi bi-credit-card"></i> Tipos de pago</a>
+                    }
+                </nav>
+
+                <div class="mt-auto pt-4">
+                    <a class="side-link @Activo("Cuenta")" asp-controller="Cuenta" asp-action="Perfil"><i class="bi bi-person"></i> Mi perfil</a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="app-main">
+            <header class="topbar no-print">
+                <button class="btn btn-light d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Abrir menú">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <a asp-controller="Transacciones" asp-action="Create" class="btn btn-primary btn-sm d-none d-sm-inline-flex align-items-center gap-1">
+                        <i class="bi bi-plus-lg"></i> Nueva transacción
+                    </a>
+                    <div class="dropdown">
+                        <button class="user-chip dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="avatar">@iniciales</span>
+                            <span class="d-none d-md-inline">@nombre</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="px-2 py-1">
+                                <div class="fw-semibold small">@nombre</div>
+                                <div class="text-muted small">@(esAdmin ? "Administrador" : "Usuario")</div>
+                            </li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li><a class="dropdown-item" asp-controller="Cuenta" asp-action="Perfil"><i class="bi bi-person me-2"></i>Mi perfil</a></li>
+                            <li><a class="dropdown-item" asp-controller="Cuenta" asp-action="CambiarPassword"><i class="bi bi-key me-2"></i>Cambiar contraseña</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li>
+                                <form asp-controller="Cuenta" asp-action="Logout" method="post">
+                                    <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <main role="main" class="content">
+                <partial name="_Alertas" />
+                @RenderBody()
+            </main>
+
+            <footer class="app-footer no-print">
+                © @DateTime.Today.Year · Sistema de Gestión de Finanzas Personales · Universidad APEC
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

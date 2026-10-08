@@ -1,0 +1,51 @@
+@model IEnumerable<Corte>
+@using FinanzasPersonales.Services
+@{
+    ViewData["Title"] = "Cortes realizados";
+    var esAdmin = User.EsAdmin();
+}
+
+<div class="page-head">
+    <div>
+        <h1>Cortes realizados</h1>
+        <p>Historial de cierres mensuales@(esAdmin ? " de todos los usuarios" : "").</p>
+    </div>
+    <a asp-action="Procesar" class="btn btn-primary"><i class="bi bi-calculator"></i> Procesar corte</a>
+</div>
+
+<div class="card table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Periodo</th>
+                @if (esAdmin) { <th>Usuario</th> }
+                <th class="text-end">Balance inicial</th>
+                <th class="text-end">Ingresos</th>
+                <th class="text-end">Egresos</th>
+                <th class="text-end">Balance al corte</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="fw-medium">@System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(new DateTime(c.Anio, c.Mes, 1).ToString("MMMM yyyy"))</div>
+                        <div class="small text-muted">@c.FechaDesde.ToString("dd/MM/yyyy") – @c.FechaCorte.ToString("dd/MM/yyyy")</div>
+                    </td>
+                    @if (esAdmin) { <td>@c.Usuario?.Nombre</td> }
+                    <td class="text-end">@c.BalanceInicial.ToString("C")</td>
+                    <td class="text-end text-success">+@c.TotalIngresos.ToString("C")</td>
+                    <td class="text-end">-@c.TotalEgresos.ToString("C")</td>
+                    <td class="text-end fw-semibold">@c.BalanceAlCorte.ToString("C")</td>
+                    <td class="text-end"><a asp-action="Detalle" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">Ver detalle</a></td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" class="empty">Aún no se ha procesado ningún corte.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

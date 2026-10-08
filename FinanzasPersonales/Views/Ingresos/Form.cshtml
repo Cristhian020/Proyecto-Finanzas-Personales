@@ -1,0 +1,43 @@
+@model Ingreso
+@{
+    var accion = Model.Id == 0 ? "Nuevo" : "Editar";
+    ViewData["Title"] = $"{accion} ingreso";
+}
+
+<div class="page-head"><div><h1>@accion ingreso</h1></div></div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form asp-action="Save" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label asp-for="Descripcion" class="form-label"></label>
+                <input asp-for="Descripcion" class="form-control" placeholder="Ej: Salario Base Unapec" autofocus />
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="TipoIngresoId" class="form-label"></label>
+                <select asp-for="TipoIngresoId" asp-items="ViewBag.TiposIngreso" class="form-select">
+                    <option value="">-- Seleccione --</option>
+                </select>
+                <span asp-validation-for="TipoIngresoId" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Institucion" class="form-label"></label>
+                <input asp-for="Institucion" class="form-control" />
+                <span asp-validation-for="Institucion" class="text-danger"></span>
+            </div>
+            <div class="form-check form-switch mb-3">
+                <input asp-for="Estado" class="form-check-input" />
+                <label asp-for="Estado" class="form-check-label"></label>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

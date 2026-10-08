@@ -1,0 +1,77 @@
+@model IEnumerable<Transaccion>
+@using FinanzasPersonales.Services
+@{
+    ViewData["Title"] = "Transacciones";
+    var esAdmin = User.EsAdmin();
+}
+
+<div class="page-head">
+    <div>
+        <h1>Transacciones</h1>
+        <p>@(esAdmin ? "Últimos 100 movimientos de todos los usuarios." : "Tus últimos 100 movimientos.")</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Consulta" asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-funnel"></i> Filtrar</a>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nueva transacción</a>
+    </div>
+</div>
+
+<div class="card table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Concepto</th>
+                <th>Fecha</th>
+                @if (esAdmin) { <th>Usuario</th> }
+                <th>Tipo de pago</th>
+                <th>Estado</th>
+                <th class="text-end">Monto</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model)
+            {
+                var ingreso = t.TipoTransaccion == TipoTransaccion.Ingreso;
+                <tr class="@(t.Estado ? "" : "opacity-50")">
+                    <td>
+                        <div class="mov">
+                            <span class="mov-icon @(ingreso ? "in" : "out")"><i class="bi @(ingreso ? "bi-arrow-down-left" : "bi-arrow-up-right")"></i></span>
+                            <div>
+                                <div class="fw-medium">@t.Concepto</div>
+                                <div class="small text-muted">No. @t.Id · @(ingreso ? "Ingreso" : "Egreso")</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-nowrap">@t.FechaTransaccion.ToString("dd/MM/yyyy")</td>
+                    @if (esAdmin) { <td>@t.Usuario?.Nombre</td> }
+                    <td>@t.TipoPago?.Descripcion @(t.NoTarjeta is null ? "" : $"···· {t.NoTarjeta}")</td>
+                    <td>
+                        @if (t.Estado)
+                        {
+                            <span class="badge text-bg-success">Activa</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary">Anulada</span>
+                        }
+                    </td>
+                    <td class="text-end fw-semibold text-nowrap @(ingreso ? "text-success" : "")">@(ingreso ? "+" : "-")@t.Monto.ToString("C")</td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary" title="Editar" aria-label="Editar"><i class="bi bi-pencil"></i></a>
+                        <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm @(t.Estado ? "btn-outline-danger" : "btn-outline-success")"
+                                    title="@(t.Estado ? "Anular" : "Reactivar")" aria-label="@(t.Estado ? "Anular" : "Reactivar")">
+                                <i class="bi @(t.Estado ? "bi-x-lg" : "bi-arrow-counterclockwise")"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" class="empty">No hay transacciones registradas.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

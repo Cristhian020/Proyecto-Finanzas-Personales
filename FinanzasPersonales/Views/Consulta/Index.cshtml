@@ -1,0 +1,141 @@
+@model ConsultaViewModel
+@using FinanzasPersonales.Services
+@{
+    ViewData["Title"] = "Consulta por criterios";
+    var esAdmin = User.EsAdmin();
+    var neto = Model.TotalIngresos - Model.TotalEgresos;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Consulta por criterios</h1>
+        <p>Filtra transacciones por @(esAdmin ? "usuario, " : "")fecha, tipo, clasificación y forma de pago.</p>
+    </div>
+</div>
+
+<div class="card mb-4 no-print">
+    <div class="card-body p-4">
+        <form asp-action="Index" method="get">
+            <input type="hidden" name="buscar" value="true" />
+            <div class="row g-3">
+                @if (esAdmin)
+                {
+                    <div class="col-md-4">
+                        <label asp-for="Filtro.UsuarioId" class="form-label"></label>
+                        <select asp-for="Filtro.UsuarioId" asp-items="ViewBag.Usuarios" class="form-select">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                }
+                <div class="@(esAdmin ? "col-md-4" : "col-md-6")">
+                    <label asp-for="Filtro.TipoTransaccion" class="form-label"></label>
+                    <select asp-for="Filtro.TipoTransaccion" asp-items="Html.GetEnumSelectList<TipoTransaccion>()" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="@(esAdmin ? "col-md-2" : "col-md-3") col-6">
+                    <label asp-for="Filtro.Desde" class="form-label"></label>
+                    <input asp-for="Filtro.Desde" class="form-control" />
+                </div>
+                <div class="@(esAdmin ? "col-md-2" : "col-md-3") col-6">
+                    <label asp-for="Filtro.Hasta" class="form-label"></label>
+                    <input asp-for="Filtro.Hasta" class="form-control" />
+                </div>
+                <div class="col-md-3 col-6">
+                    <label asp-for="Filtro.TipoEgresoId" class="form-label"></label>
+                    <select asp-for="Filtro.TipoEgresoId" asp-items="ViewBag.TiposEgreso" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-6">
+                    <label asp-for="Filtro.RenglonEgresoId" class="form-label"></label>
+                    <select asp-for="Filtro.RenglonEgresoId" asp-items="ViewBag.Renglones" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-6">
+                    <label asp-for="Filtro.TipoIngresoId" class="form-label"></label>
+                    <select asp-for="Filtro.TipoIngresoId" asp-items="ViewBag.TiposIngreso" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-6">
+                    <label asp-for="Filtro.TipoPagoId" class="form-label"></label>
+                    <select asp-for="Filtro.TipoPagoId" asp-items="ViewBag.TiposPago" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
+                <div class="form-check">
+                    <input asp-for="Filtro.IncluirAnuladas" class="form-check-input" />
+                    <label asp-for="Filtro.IncluirAnuladas" class="form-check-label small"></label>
+                </div>
+                <div class="d-flex gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Consultar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (ViewBag.Buscar == true)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4"><div class="card kpi"><div class="kpi-label">Total ingresos</div><div class="kpi-value text-success">@Model.TotalIngresos.ToString("C")</div></div></div>
+        <div class="col-sm-4"><div class="card kpi"><div class="kpi-label">Total egresos</div><div class="kpi-value text-danger">@Model.TotalEgresos.ToString("C")</div></div></div>
+        <div class="col-sm-4"><div class="card kpi kpi-dark"><div class="kpi-label">Neto</div><div class="kpi-value">@neto.ToString("C")</div></div></div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="section-title mb-0">@Model.Resultados.Count resultado(s)</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+    </div>
+
+    <div class="card table-responsive">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Fecha</th>
+                    @if (esAdmin) { <th>Usuario</th> }
+                    <th>Concepto</th>
+                    <th>Clasificación</th>
+                    <th>Tipo de pago</th>
+                    <th>Comentario</th>
+                    <th class="text-end">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Resultados)
+                {
+                    var ingreso = t.TipoTransaccion == TipoTransaccion.Ingreso;
+                    <tr class="@(t.Estado ? "" : "opacity-50 text-decoration-line-through")">
+                        <td class="text-muted">@t.Id</td>
+                        <td class="text-nowrap">@t.FechaTransaccion.ToString("dd/MM/yyyy")</td>
+                        @if (esAdmin) { <td>@t.Usuario?.Nombre</td> }
+                        <td class="fw-medium">@t.Concepto</td>
+                        <td class="text-muted">
+                            @if (ingreso)
+                            {
+                                @t.Ingreso?.TipoIngreso?.Descripcion
+                            }
+                            else
+                            {
+                                @($"{t.Egreso?.TipoEgreso?.Descripcion} · {t.Egreso?.RenglonEgreso?.Descripcion}")
+                            }
+                        </td>
+                        <td>@t.TipoPago?.Descripcion</td>
+                        <td class="small text-muted">@t.Comentario</td>
+                        <td class="text-end fw-semibold text-nowrap @(ingreso ? "text-success" : "")">@(ingreso ? "+" : "-")@t.Monto.ToString("C")</td>
+                    </tr>
+                }
+                @if (!Model.Resultados.Any())
+                {
+                    <tr><td colspan="8" class="empty">No hay transacciones que cumplan los criterios.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

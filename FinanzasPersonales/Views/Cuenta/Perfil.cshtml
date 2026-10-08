@@ -1,0 +1,64 @@
+@model PerfilViewModel
+@{
+    ViewData["Title"] = "Mi perfil";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Mi perfil</h1>
+        <p>Tus datos personales y preferencias del corte mensual.</p>
+    </div>
+    <a asp-action="CambiarPassword" class="btn btn-outline-secondary"><i class="bi bi-key"></i> Cambiar contraseña</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card form-card">
+            <div class="card-body">
+                <form asp-action="Perfil" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Nombre" class="form-label"></label>
+                            <input asp-for="Nombre" class="form-control" />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-7">
+                            <label asp-for="LimiteEgresos" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">RD$</span>
+                                <input asp-for="LimiteEgresos" type="number" step="0.01" min="0" class="form-control" />
+                            </div>
+                            <span asp-validation-for="LimiteEgresos" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-5">
+                            <label asp-for="DiaCorte" class="form-label"></label>
+                            <input asp-for="DiaCorte" type="number" min="1" max="28" class="form-control" />
+                            <span asp-validation-for="DiaCorte" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4"><i class="bi bi-check2"></i> Guardar cambios</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Cédula / RNC</span><span class="tabular">@DocumentoIdentidad.Formatear(Model.Cedula)</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Tipo persona</span><span>@(Model.TipoPersona == TipoPersona.Fisica ? "Física" : "Jurídica")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Rol</span><span class="badge @(Model.Rol == Rol.Administrador ? "text-bg-dark" : "text-bg-secondary")">@Model.Rol</span></li>
+            </ul>
+        </div>
+        <p class="text-muted small mt-2">La cédula y el tipo de persona sólo pueden cambiarse por un administrador.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

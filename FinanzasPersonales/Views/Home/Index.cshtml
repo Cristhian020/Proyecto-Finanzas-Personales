@@ -1,0 +1,160 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Inicio";
+    var primerNombre = Model.Nombre.Split(' ')[0];
+    var saludo = DateTime.Now.Hour switch { < 12 => "Buenos días", < 19 => "Buenas tardes", _ => "Buenas noches" };
+    var clasesMedidor = Model.PorcentajeLimite >= 100 ? "over" : Model.PorcentajeLimite >= 80 ? "warn" : "";
+    var mayorRenglon = Model.EgresosPorRenglon.Count > 0 ? Model.EgresosPorRenglon.Max(x => x.Total) : 0m;
+}
+
+<div class="page-head">
+    <div>
+        <h1>@saludo, @primerNombre</h1>
+        <p>
+            @if (Model.EsAdmin)
+            {
+                @:Resumen general del mes · @Model.Desde.ToString("dd MMM") – @Model.Hasta.ToString("dd MMM yyyy")
+            }
+            else
+            {
+                @:Tu periodo actual · @Model.Desde.ToString("dd MMM") – @Model.Hasta.ToString("dd MMM yyyy")
+            }
+        </p>
+    </div>
+    <a asp-controller="Transacciones" asp-action="Create" class="btn btn-primary d-sm-none"><i class="bi bi-plus-lg"></i> Nueva transacción</a>
+</div>
+
+@if (Model.EsAdmin)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3"><div class="card kpi"><div class="kpi-label"><i class="bi bi-people"></i> Usuarios activos</div><div class="kpi-value">@Model.Usuarios</div></div></div>
+        <div class="col-6 col-xl-3"><div class="card kpi"><div class="kpi-label"><i class="bi bi-arrow-left-right"></i> Transacciones del mes</div><div class="kpi-value">@Model.Transacciones</div></div></div>
+        <div class="col-6 col-xl-3"><div class="card kpi"><div class="kpi-label"><i class="bi bi-arrow-down-left"></i> Ingresos del mes</div><div class="kpi-value text-success">@Model.Ingresos.ToString("C")</div></div></div>
+        <div class="col-6 col-xl-3"><div class="card kpi"><div class="kpi-label"><i class="bi bi-arrow-up-right"></i> Egresos del mes</div><div class="kpi-value text-danger">@Model.Egresos.ToString("C")</div></div></div>
+    </div>
+
+    @if (Model.SobreLimite.Any())
+    {
+        <h2 class="section-title">Usuarios sobre su límite</h2>
+        <div class="card mb-4">
+            <ul class="list-group list-group-flush">
+                @foreach (var (u, gastado) in Model.SobreLimite)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="mov">
+                            <span class="mov-icon out"><i class="bi bi-exclamation-triangle"></i></span>
+                            <div>
+                                <div class="fw-medium">@u.Nombre</div>
+                                <div class="small text-muted">Límite @u.LimiteEgresos.ToString("C")</div>
+                            </div>
+                        </div>
+                        <span class="fw-semibold text-danger tabular">@gastado.ToString("C")</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card kpi kpi-dark">
+                <div class="kpi-label"><i class="bi bi-wallet2"></i> Balance estimado</div>
+                <div class="kpi-value">@(((Model.BalanceUltimoCorte ?? 0m) + Model.Neto).ToString("C"))</div>
+                <div class="kpi-sub" style="color:#a1a1aa">Último corte @((Model.BalanceUltimoCorte ?? 0m).ToString("C")) + neto del periodo</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-6 col-xl-3"><div class="card kpi"><div class="kpi-label"><i class="bi bi-arrow-down-left"></i> Ingresos</div><div class="kpi-value text-success">@Model.Ingresos.ToString("C")</div><div class="kpi-sub">En el periodo</div></div></div>
+        <div class="col-6 col-md-6 col-xl-3"><div class="card kpi"><div class="kpi-label"><i class="bi bi-arrow-up-right"></i> Egresos</div><div class="kpi-value text-danger">@Model.Egresos.ToString("C")</div><div class="kpi-sub">@Model.Transacciones movimientos</div></div></div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card kpi">
+                <div class="kpi-label"><i class="bi bi-speedometer2"></i> Límite de egresos</div>
+                @if (Model.LimiteEgresos > 0)
+                {
+                    <div class="kpi-value">@Model.PorcentajeLimite%</div>
+                    <div class="meter mt-2 @clasesMedidor"><span style="width:@Model.PorcentajeLimite%"></span></div>
+                    <div class="kpi-sub mt-2">@Model.Egresos.ToString("C") de @Model.LimiteEgresos.ToString("C")</div>
+                }
+                else
+                {
+                    <div class="kpi-value">—</div>
+                    <div class="kpi-sub"><a asp-controller="Cuenta" asp-action="Perfil">Define un límite</a></div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (Model.LimiteEgresos > 0 && Model.Egresos > Model.LimiteEgresos)
+    {
+        <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i>
+            Superaste tu límite de egresos del periodo por <strong>@((Model.Egresos - Model.LimiteEgresos).ToString("C"))</strong>.
+        </div>
+    }
+}
+
+<div class="row g-4">
+    <div class="@(Model.EsAdmin ? "col-12" : "col-lg-7")">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="section-title mb-0">Movimientos recientes</h2>
+            <a asp-controller="Transacciones" asp-action="Index" class="small">Ver todos</a>
+        </div>
+        <div class="card">
+            <ul class="list-group list-group-flush">
+                @foreach (var t in Model.Ultimas)
+                {
+                    var ingreso = t.TipoTransaccion == TipoTransaccion.Ingreso;
+                    <li class="list-group-item d-flex justify-content-between align-items-center @(t.Estado ? "" : "opacity-50")">
+                        <div class="mov">
+                            <span class="mov-icon @(ingreso ? "in" : "out")"><i class="bi @(ingreso ? "bi-arrow-down-left" : "bi-arrow-up-right")"></i></span>
+                            <div>
+                                <div class="fw-medium">@t.Concepto</div>
+                                <div class="small text-muted">
+                                    @t.FechaTransaccion.ToString("dd MMM yyyy")
+                                    @if (Model.EsAdmin) { <text>· @t.Usuario?.Nombre</text> }
+                                    @if (!t.Estado) { <text>· Anulada</text> }
+                                </div>
+                            </div>
+                        </div>
+                        <span class="fw-semibold tabular @(ingreso ? "text-success" : "")">@(ingreso ? "+" : "-")@t.Monto.ToString("C")</span>
+                    </li>
+                }
+                @if (!Model.Ultimas.Any())
+                {
+                    <li class="list-group-item empty">
+                        Aún no hay movimientos. <a asp-controller="Transacciones" asp-action="Create">Registra el primero</a>.
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    @if (!Model.EsAdmin)
+    {
+        <div class="col-lg-5">
+            <h2 class="section-title">Gastos por renglón</h2>
+            <div class="card">
+                <div class="card-body">
+                    @foreach (var (renglon, total) in Model.EgresosPorRenglon)
+                    {
+                        var ancho = mayorRenglon == 0 ? 0 : (int)Math.Round(total / mayorRenglon * 100);
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="fw-medium">@renglon</span>
+                                <span class="tabular text-muted">@total.ToString("C")</span>
+                            </div>
+                            <div class="meter"><span style="width:@ancho%; background: var(--ink)"></span></div>
+                        </div>
+                    }
+                    @if (!Model.EgresosPorRenglon.Any())
+                    {
+                        <div class="empty py-3">Sin gastos en este periodo.</div>
+                    }
+                </div>
+            </div>
+            <div class="d-grid gap-2 mt-3">
+                <a asp-controller="Cortes" asp-action="Procesar" class="btn btn-outline-secondary"><i class="bi bi-calculator"></i> Procesar corte mensual</a>
+            </div>
+        </div>
+    }
+</div>

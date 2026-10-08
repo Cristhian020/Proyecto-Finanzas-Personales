@@ -1,0 +1,88 @@
+@model DetalleCorteViewModel
+@{
+    var c = Model.Corte;
+    var mes = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(new DateTime(c.Anio, c.Mes, 1).ToString("MMMM yyyy"));
+    ViewData["Title"] = $"Corte {mes}";
+    var mayor = Model.EgresosPorRenglon.Count > 0 ? Model.EgresosPorRenglon.Max(x => x.Total) : 0m;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Corte de @mes</h1>
+        <p>
+            @c.Usuario?.Nombre · @c.FechaDesde.ToString("dd/MM/yyyy") – @c.FechaCorte.ToString("dd/MM/yyyy")
+            · Procesado el @c.FechaProceso.ToString("dd/MM/yyyy hh:mm tt")
+        </p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-label">Balance inicial</div><div class="kpi-value">@c.BalanceInicial.ToString("C")</div></div></div>
+    <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-label">Total ingresos</div><div class="kpi-value text-success">@c.TotalIngresos.ToString("C")</div></div></div>
+    <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-label">Total egresos</div><div class="kpi-value text-danger">@c.TotalEgresos.ToString("C")</div></div></div>
+    <div class="col-6 col-lg-3"><div class="card kpi kpi-dark"><div class="kpi-label">Balance al corte</div><div class="kpi-value">@c.BalanceAlCorte.ToString("C")</div></div></div>
+</div>
+
+@if (c.Usuario is { LimiteEgresos: > 0 } u && c.TotalEgresos > u.LimiteEgresos)
+{
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i>
+        En este periodo los egresos superaron el límite de @u.LimiteEgresos.ToString("C") por <strong>@((c.TotalEgresos - u.LimiteEgresos).ToString("C"))</strong>.
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <h2 class="section-title">Transacciones del periodo</h2>
+        <div class="card table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr><th>No.</th><th>Fecha</th><th>Concepto</th><th>Tipo de pago</th><th class="text-end">Monto</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Transacciones)
+                    {
+                        var ingreso = t.TipoTransaccion == TipoTransaccion.Ingreso;
+                        <tr>
+                            <td class="text-muted">@t.Id</td>
+                            <td class="text-nowrap">@t.FechaTransaccion.ToString("dd/MM/yyyy")</td>
+                            <td class="fw-medium">@t.Concepto</td>
+                            <td>@t.TipoPago?.Descripcion</td>
+                            <td class="text-end fw-semibold text-nowrap @(ingreso ? "text-success" : "")">@(ingreso ? "+" : "-")@t.Monto.ToString("C")</td>
+                        </tr>
+                    }
+                    @if (!Model.Transacciones.Any())
+                    {
+                        <tr><td colspan="5" class="empty">Sin transacciones en el periodo.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <h2 class="section-title">Egresos por renglón</h2>
+        <div class="card">
+            <div class="card-body">
+                @foreach (var (renglon, total) in Model.EgresosPorRenglon)
+                {
+                    var ancho = mayor == 0 ? 0 : (int)Math.Round(total / mayor * 100);
+                    var pct = c.TotalEgresos == 0 ? 0 : (int)Math.Round(total / c.TotalEgresos * 100);
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-medium">@renglon</span>
+                            <span class="tabular text-muted">@total.ToString("C") · @pct%</span>
+                        </div>
+                        <div class="meter"><span style="width:@ancho%; background: var(--ink)"></span></div>
+                    </div>
+                }
+                @if (!Model.EgresosPorRenglon.Any())
+                {
+                    <div class="empty py-3">Sin egresos.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

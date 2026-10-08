@@ -1,0 +1,11 @@
+@model (int Id, bool Estado)
+<form asp-action="CambiarEstado" asp-route-id="@Model.Id" method="post" class="d-inline">
+    @if (Model.Estado)
+    {
+        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Inactivar"><i class="bi bi-toggle-on"></i> Inactivar</button>
+    }
+    else
+    {
+        <button type="submit" class="btn btn-sm btn-outline-success" title="Activar"><i class="bi bi-toggle-off"></i> Activar</button>
+    }
+</form>

@@ -1,0 +1,98 @@
+@model ReporteCorteViewModel
+@using FinanzasPersonales.Services
+@{
+    ViewData["Title"] = "Reporte de cortes";
+    var f = Model.Filtro;
+    var esAdmin = User.EsAdmin();
+}
+
+<div class="page-head">
+    <div>
+        <h1>Reporte de cortes</h1>
+        <p>Cortes entre fechas@(esAdmin ? " y por usuario" : ""), con totales.</p>
+    </div>
+    <button type="button" class="btn btn-outline-secondary no-print" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+</div>
+
+<div class="card mb-4 no-print">
+    <div class="card-body p-4">
+        <form asp-action="Reporte" method="get" class="row g-3 align-items-end">
+            @if (esAdmin)
+            {
+                <div class="col-md-4">
+                    <label asp-for="Filtro.UsuarioId" class="form-label"></label>
+                    <select asp-for="Filtro.UsuarioId" asp-items="ViewBag.Usuarios" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+            }
+            <div class="col-md-3 col-6">
+                <label asp-for="Filtro.Desde" class="form-label">Fecha de corte desde</label>
+                <input asp-for="Filtro.Desde" class="form-control" />
+            </div>
+            <div class="col-md-3 col-6">
+                <label asp-for="Filtro.Hasta" class="form-label">Fecha de corte hasta</label>
+                <input asp-for="Filtro.Hasta" class="form-control" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Generar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="print-only mb-3">
+    <h2 class="h5">Sistema de Gestión de Finanzas Personales — Reporte de cortes</h2>
+    <div class="small">
+        Usuario: @(f.UsuarioId is null ? "Todos" : Model.Cortes.FirstOrDefault()?.Usuario?.Nombre)
+        · Desde: @(f.Desde?.ToString("dd/MM/yyyy") ?? "—") · Hasta: @(f.Hasta?.ToString("dd/MM/yyyy") ?? "—")
+        · Generado: @DateTime.Now.ToString("dd/MM/yyyy hh:mm tt")
+    </div>
+</div>
+
+<div class="card table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                @if (esAdmin) { <th>Usuario</th> }
+                <th>Año / Mes</th>
+                <th>Fecha de corte</th>
+                <th class="text-end">Balance inicial</th>
+                <th class="text-end">Ingresos</th>
+                <th class="text-end">Egresos</th>
+                <th class="text-end">Balance al corte</th>
+                <th class="no-print"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model.Cortes)
+            {
+                <tr>
+                    @if (esAdmin) { <td>@c.Usuario?.Nombre</td> }
+                    <td>@c.Anio / @c.Mes.ToString("00")</td>
+                    <td>@c.FechaCorte.ToString("dd/MM/yyyy")</td>
+                    <td class="text-end">@c.BalanceInicial.ToString("C")</td>
+                    <td class="text-end text-success">@c.TotalIngresos.ToString("C")</td>
+                    <td class="text-end text-danger">@c.TotalEgresos.ToString("C")</td>
+                    <td class="text-end fw-semibold">@c.BalanceAlCorte.ToString("C")</td>
+                    <td class="text-end no-print"><a asp-action="Detalle" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">Detalle</a></td>
+                </tr>
+            }
+            @if (!Model.Cortes.Any())
+            {
+                <tr><td colspan="8" class="empty">No hay cortes para los criterios indicados.</td></tr>
+            }
+        </tbody>
+        @if (Model.Cortes.Any())
+        {
+            <tfoot class="fw-semibold">
+                <tr>
+                    <td colspan="@(esAdmin ? 4 : 3)">Totales · @Model.Cortes.Count corte(s)</td>
+                    <td class="text-end text-success">@Model.Cortes.Sum(c => c.TotalIngresos).ToString("C")</td>
+                    <td class="text-end text-danger">@Model.Cortes.Sum(c => c.TotalEgresos).ToString("C")</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        }
+    </table>
+</div>

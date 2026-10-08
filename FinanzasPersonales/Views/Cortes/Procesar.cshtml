@@ -1,0 +1,70 @@
+@model ProcesarCorteViewModel
+@using FinanzasPersonales.Services
+@{
+    ViewData["Title"] = "Procesar corte mensual";
+    var cultura = System.Globalization.CultureInfo.CurrentCulture;
+    var meses = cultura.DateTimeFormat.MonthNames.Take(12)
+        .Select((nombre, i) => new SelectListItem(cultura.TextInfo.ToTitleCase(nombre), (i + 1).ToString()));
+    var esAdmin = User.EsAdmin();
+}
+
+<div class="page-head">
+    <div>
+        <h1>Procesar corte mensual</h1>
+        <p>Cierra un periodo y calcula su balance.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Ver cortes realizados</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body p-4">
+                <form asp-action="Procesar" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    @if (esAdmin)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="UsuarioId" class="form-label"></label>
+                            <select asp-for="UsuarioId" asp-items="ViewBag.Usuarios" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                            <span asp-validation-for="UsuarioId" class="text-danger"></span>
+                        </div>
+                    }
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label asp-for="Mes" class="form-label"></label>
+                            <select asp-for="Mes" asp-items="meses" class="form-select"></select>
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="Anio" class="form-label"></label>
+                            <input asp-for="Anio" type="number" class="form-control" />
+                            <span asp-validation-for="Anio" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4 w-100"><i class="bi bi-calculator"></i> Procesar corte</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100" style="background: var(--soft); border-color: transparent">
+            <div class="card-body p-4 small">
+                <h2 class="section-title">¿Cómo funciona?</h2>
+                <ol class="mb-0 ps-3 d-flex flex-column gap-2">
+                    <li>El periodo va desde el día siguiente al corte anterior hasta el <strong>día de corte</strong> del usuario.</li>
+                    <li><strong>Balance inicial</strong> = balance al corte del mes anterior (0 si es el primero).</li>
+                    <li><strong>Balance al corte</strong> = balance inicial + ingresos − egresos.</li>
+                    <li>Sólo cuentan las transacciones activas (no anuladas).</li>
+                    <li>Los cortes van en orden; sólo el último puede reprocesarse.</li>
+                    <li>Al cortar un periodo, sus transacciones quedan bloqueadas.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

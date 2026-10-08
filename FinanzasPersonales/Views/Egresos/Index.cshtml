@@ -1,0 +1,45 @@
+@model IEnumerable<Egreso>
+@{
+    ViewData["Title"] = "Egresos";
+    ViewData["Encabezado"] = "Gestión de egresos";
+    ViewData["Subtitulo"] = "Conceptos de gasto disponibles al registrar transacciones.";
+}
+
+<partial name="_Buscador" />
+
+<div class="card shadow-sm table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Id</th>
+                <th>Descripción</th>
+                <th>Tipo de egreso</th>
+                <th>Renglón</th>
+                <th>Tipo de pago x defecto</th>
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model)
+            {
+                <tr class="@(e.Estado ? "" : "opacity-50")">
+                    <td>@e.Id</td>
+                    <td>@e.Descripcion</td>
+                    <td>@e.TipoEgreso?.Descripcion</td>
+                    <td>@e.RenglonEgreso?.Descripcion</td>
+                    <td>@e.TipoPagoDefecto?.Descripcion</td>
+                    <td><partial name="_Estado" model="e.Estado" /></td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@e.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Editar</a>
+                        <partial name="_BotonEstado" model="(e.Id, e.Estado)" />
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" class="empty">No hay egresos registrados.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

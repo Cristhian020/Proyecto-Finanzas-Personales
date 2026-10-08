@@ -1,0 +1,49 @@
+@model IEnumerable<Usuario>
+@{
+    ViewData["Title"] = "Usuarios";
+    ViewData["Subtitulo"] = "Cuentas, roles y límites de egresos.";
+}
+
+<partial name="_Buscador" />
+
+<div class="card table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Cédula / RNC</th>
+                <th>Tipo</th>
+                <th>Rol</th>
+                <th class="text-end">Límite</th>
+                <th class="text-center">Corte</th>
+                <th>Estado</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr class="@(u.Estado ? "" : "opacity-50")">
+                    <td>
+                        <div class="fw-medium">@u.Nombre</div>
+                        <div class="small text-muted">@u.Email</div>
+                    </td>
+                    <td class="tabular">@DocumentoIdentidad.Formatear(u.Cedula)</td>
+                    <td>@(u.TipoPersona == TipoPersona.Fisica ? "Física" : "Jurídica")</td>
+                    <td><span class="badge @(u.Rol == Rol.Administrador ? "text-bg-dark" : "text-bg-secondary")">@u.Rol</span></td>
+                    <td class="text-end">@u.LimiteEgresos.ToString("C")</td>
+                    <td class="text-center">Día @u.DiaCorte</td>
+                    <td><partial name="_Estado" model="u.Estado" /></td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Editar</a>
+                        <partial name="_BotonEstado" model="(u.Id, u.Estado)" />
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="empty">No hay usuarios registrados.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
