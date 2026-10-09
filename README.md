@@ -2,8 +2,7 @@
 
 Proyecto final de asignatura — Universidad APEC (Prof. Juan P. Valdez).
 
-Aplicación web para gestionar ingresos, egresos y cortes mensuales, con **cuentas de usuario y dos roles (Administrador y Usuario)**. Está desarrollada con **ASP.NET Core MVC (.NET 10)** y **Entity Framework Core** sobre **SQL Server**, con una interfaz moderna y minimalista.
-
+Aplicación web para gestionar ingresos, egresos y cortes mensuales, con **cuentas de usuario y dos roles (Administrador y Usuario)
 ## Tecnologías
 
 | Capa | Tecnología |
